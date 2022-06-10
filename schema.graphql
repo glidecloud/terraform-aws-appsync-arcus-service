@@ -1,0 +1,190 @@
+interface Error {
+    message: String!
+}
+
+#### SHARED ####
+
+type DocumentId {
+    id: ID!
+    version_id: ID
+}
+
+#### ARCUS ####
+
+type IndexedDocumentSequentialID {
+    tag: String!
+    sequential_id: Int!
+}
+
+type IndexedDocument {
+    # A JSON map with at least one key-value pair.
+    # Keys can only contain letters, numbers, underscores, and dashes.
+    # Contents are indexed for searchability.
+    contents: AWSJSON!
+
+    # Plain-string tags for a document.
+    # Queries require at least one tag to be set.
+    tags: [String!]!
+
+    # The sequential IDs that have been generated for the document.
+    sequential_ids: [IndexedDocumentSequentialID]!
+
+    # This field is only set when searching for documents.
+    # Can be used to paginate queries using Elasticsearch search_after search option.
+    sort: AWSJSON
+
+    # Standard Document Fields
+    # Arcus ID
+    arcus_id: DocumentId!
+    # The GlideCloud Tenant ID which "owns" this document
+    tenant_id: ID!
+    # Identifying a GlideCloud Principle
+    created_by: ID
+    # Date of creation
+    created_at: String!
+    # Identifying a GlideCloud Principle
+    updated_by: ID
+    # DateTime of last update
+    updated_at: String!
+    # A source string, for deriving an update
+    source: String
+    # Only present if accessing a soft-deleted document
+    deleted_at: String
+}
+
+enum JsonPatchOpType {
+    add
+    remove
+    replace
+    copy
+    move
+    test
+}
+
+input JsonPatchOp {
+    op: JsonPatchOpType!
+    path: String
+    from: String
+    value: AWSJSON
+}
+
+input IndexedDocumentInput {
+    # Setting contents always replaces the existing contents.
+    # JSONPatch is provided as a convenience for updating existing
+    # documents.
+    contents: AWSJSON
+
+    # Tags are always required for a document, but do not need
+    # to be provided in updates.
+    # Tags are used to narrow down search results, and label
+    # documents with a type name.
+    tags: [String!]
+
+    # Always applied to the document before persistence, regardless
+    # of if it is a PUT or a PATCH.
+    # If contents are not set when creating a new document, JSONPatch
+    # operations will be applied to an empty map.
+    jsonpatch_ops: [JsonPatchOp!]
+
+    # A list of Tags to generate sequential IDs for.
+    # Any Tag passed here must also be passed in the `tags` list.
+    sequential_ids: [String]
+}
+
+type IndexedDocumentSearchV1Result {
+    # The Documents that matched the query.
+    hits: [IndexedDocument]!
+
+    # Fields forwarded from the Elasticsearch query.
+    # Clients might wish to log metadata about their query.
+    took: AWSJSON!
+    timed_out: AWSJSON!
+}
+
+type IndexedDocumentSearchV1DryRun {
+    # The QueryLang query string that was provided by the client.
+    q: String
+
+    # The QueryLang sort string that was provided by the client.
+    sort_by: String
+
+    # JSON-serialized Elasticsearch query generated from inputs.
+    elastic: AWSJSON!
+}
+
+# Searches can simply be done on tags, or you can narrow down the
+# search using QueryLang query & sort strings.
+input IndexedDocumentSearchV1Query {
+    # QueryLang string for forming the query.
+    q: String
+
+    # The QueryLang sort string for setting sort behavior.
+    sort_by: String
+
+    # At least one tag for the query.
+    tags: [String!]!
+
+    # Optionally, the query body to send to Elasticsearch.
+    # If a 'query' is set, it will be nested in a boolean query's `must` alongside
+    # the injected tenant_id and tags queries.
+    query: AWSJSON
+}
+
+type IndexedDocumentMultiGetV1Error {
+    arcus_id: DocumentId!
+    error_reason: String
+}
+
+union IndexedDocumentMultiGetV1Hit = IndexedDocument | IndexedDocumentMultiGetV1Error
+
+type IndexedDocumentMultiGetV1Result {
+    hits: [IndexedDocumentMultiGetV1Hit]!
+    num_succeeded: Int!
+    num_failed: Int!
+}
+
+type IndexedDocumentMapping {
+    mapping: AWSJSON!
+}
+
+type IndexedDocumentTag {
+    tag: String!
+    doc_count: AWSJSON!
+}
+
+type IndexedDocumentTags {
+    tags: [IndexedDocumentTag]!
+}
+
+type Mutation {
+    # Creating and updating Indexed Documents
+    indexedDocumentCreate(input: IndexedDocumentInput!): IndexedDocument!
+    indexedDocumentUpdate(id: ID!, input: IndexedDocumentInput!): IndexedDocument!
+}
+
+type Query {
+    # Gets a generic indexed document by ID
+    indexedDocumentDetails(id: ID!): IndexedDocument!
+    # Gets a list of documents by ID. Returns the documents in the same order as the given IDs.
+    # Produces an error if the size of the `ids` list is greater than 25.
+    indexedDocumentDetailsMultiGetV1(ids: [ID]!): IndexedDocumentMultiGetV1Result!
+    # Get a document by sequential ID
+    indexedDocumentDetailsBySequentialID(tag: String!, id: Int!): IndexedDocument!
+
+    # Indexed documents search v1 using QueryLang strings
+    indexedDocumentSearchV1(query: IndexedDocumentSearchV1Query!): IndexedDocumentSearchV1Result!
+    # Search dry-runs are useful for introspecting on queries generated by QueryLang strings
+    indexedDocumentSearchV1DryRun(query: IndexedDocumentSearchV1Query!): IndexedDocumentSearchV1DryRun!
+    # Returns the Elasticsearch mapping that backs Indexed Documents
+    # Useful for understanding dry-run output
+    indexedDocumentMapping: IndexedDocumentMapping!
+    # Get up to 500 tags in the current tenant. Limitless pagination support will be added in the future. 
+    indexedDocumentTags: IndexedDocumentTags!
+    # List all versions of a document. Returns a list of full documents starting with the most recent version.
+    indexedDocumentListVersionsFull(id: ID!): [IndexedDocument!]!
+}
+
+schema {
+    query: Query
+    mutation: Mutation
+}
