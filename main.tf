@@ -1,7 +1,7 @@
 resource "null_resource" "graphql_schema" {
   triggers = {
     # Picks up any changes to the schema.graphql file
-    graphql_schema = sha1(file("${path.root}/schema.graphql"))
+    graphql_schema = sha1(file("${path.module}/schema.graphql"))
   }
 }
 
