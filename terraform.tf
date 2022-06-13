@@ -20,8 +20,8 @@ provider "aws" {
 }
 
 locals {
-  request_template_path  = "${path.root}/resources/elixirServiceRequestTemplate.tpl"
-  response_template_path = "${path.root}/resources/elixirServiceResponseTemplate.tpl"
+  request_template_path  = "${path.module}/resources/elixirServiceRequestTemplate.tpl"
+  response_template_path = "${path.module}/resources/elixirServiceResponseTemplate.tpl"
   arcus_api_path         = "/documents/api/v1"
 }
 
