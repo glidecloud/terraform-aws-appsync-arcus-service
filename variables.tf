@@ -23,6 +23,12 @@ variable "api_hostname" {
   type        = string
 }
 
+variable "authentication_type" {
+  description = "Default authentication type for API requests"
+  type        = string
+  default     = "AMAZON_COGNITO_USER_POOLS"
+}
+
 variable "cognito_user_pool_id" {
   description = "Cognito User Pool ID"
   type        = string

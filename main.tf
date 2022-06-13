@@ -14,7 +14,7 @@ resource "aws_appsync_graphql_api" "graphql-api" {
   depends_on = [null_resource.graphql_schema]
   schema     = file("${path.module}/schema.graphql")
 
-  authentication_type = "API_KEY"
+  authentication_type = var.authentication_type
 
   dynamic "log_config" {
     for_each = var.cloudwatch_logs_enabled ? [0] : []
