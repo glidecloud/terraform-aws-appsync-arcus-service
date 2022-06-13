@@ -26,7 +26,7 @@ variable "api_hostname" {
 variable "authentication_type" {
   description = "Default authentication type for API requests"
   type        = string
-  default     = "AMAZON_COGNITO_USER_POOLS"
+  default     = "API_KEY"
 }
 
 variable "cognito_user_pool_id" {
