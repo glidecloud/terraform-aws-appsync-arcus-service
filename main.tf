@@ -16,6 +16,11 @@ resource "aws_appsync_graphql_api" "graphql-api" {
 
   authentication_type = var.authentication_type
 
+  user_pool_config {
+    default_action = "ALLOW"
+    user_pool_id   = var.cognito_user_pool_id
+  }
+  
   dynamic "log_config" {
     for_each = var.cloudwatch_logs_enabled ? [0] : []
 
