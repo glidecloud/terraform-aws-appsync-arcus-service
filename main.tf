@@ -30,7 +30,7 @@ resource "aws_appsync_graphql_api" "graphql-api" {
 resource "aws_appsync_api_key" "graphql-api-key" {
   api_id = aws_appsync_graphql_api.graphql-api.id
   description = "Well-known public API key for GraphQL access"
-  expires = "2022-07-01T00:00:00Z"
+  expires = "2023-07-01T00:00:00Z"
 }
 
 resource "aws_appsync_datasource" "arcus-service" {
